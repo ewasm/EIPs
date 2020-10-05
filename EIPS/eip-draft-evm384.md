@@ -9,15 +9,18 @@ category: Core
 created: 2020-10-01
 ---
 
-## Simple Summary
-
-If you can't explain it simply, you don't understand it well enough." Provide a simplified and layman-accessible explanation of the EIP.
-
 ## Abstract
 
-A short (~200 word) description of the technical issue being addressed.
+Introducing three opcodes to speed up 384-bit computations. They can be useful for efficiently implementing elliptic curve operations
+on up to 384-bit curves, this includes BLS12-381 and BLS12-377, among others.
 
 ## Motivation
+
+The EVM is perceived to be too slow for computationally heavy tasks and this has resulted in introducing several precompiles over the years.
+[Prior work](https://notes.ethereum.org/@axic/evm384#History-of-precompiles) has found that this assumption has been challenged a few times.
+This motivated the work to see where the BLS12-381 curve operations
+
+
 
 The motivation is critical for EIPs that want to change the Ethereum protocol. It should clearly explain why the existing protocol specification is inadequate to address the problem that the EIP solves. EIP submissions without sufficient motivation may be rejected outright.
 
@@ -27,27 +30,112 @@ https://notes.ethereum.org/@poemm/evm384-interface-update
 
 ## Specification
 
-The technical specification should describe the syntax and semantics of any new feature. The specification should be detailed enough to allow competing, interoperable implementations for any of the current Ethereum platforms (go-ethereum, parity, cpp-ethereum, ethereumj, ethereumjs, and [others](https://github.com/ethereum/wiki/wiki/Clients)).
+We use notation from the yellowpaper.
+
+| value    | Mnemonic      | delta   | alpha   | Description|
+| -------- | --------      | ---     | ---     | ---        |
+| 0xc0     | ADDMOD384     | (below) | (below) | (below)    |
+| 0xc1     | SUBMOD384     | (below) | (below) | (below)    |
+| 0xc2     | MULMODMONT384 | (below) | (below) | (below)    |
+
+Recall from the yellowpaper that delta is number of elements popped from stack and alpha is number of elements pushed to stack. In the descriptions below, we replace yellowpaper symbols $𝛍_s$, $𝛍_m$, and $𝛍_i$ with `stack`, `memory`, and `memoryLength`, respectively. In particular, `stack[0]` refers to the first item popped from the stack, `stack[1]` is the second item popped from the stack, and so on. `stack'[0]` and `stack'[1]` are the top and second-to-top item pushed to the stack by the operation. `memory[i..i+48]` refers to the memory bytes from byte `i` to `i+48`. `memoryLength` is the current number of 32-byte chunks in memory. Finally, function `M(current_memoryLength, start_byte_offset, bytelength_accessed)` is the "memory expansion for range function" from the yellowpaper H.1. 
+
+#### ADDMOD384 | alpha = 1 | delta = 0 | Description:
+```
+out_offset = stack[0][16:20]
+x_offset = stack[0][20:24]
+y_offset = stack[0][24:28]
+mod_offset = stack[0][28:32]  i.e. least-significant bytes of the big-endian stack item.
+
+Where each offset is a big-endian unsigned 32-bit integer.
+
+x = memory[x_offset:x_offset+48]
+y = memory[y_offset:y_offset+48]
+mod = memory[mod_offset:mod_offset+48]
+
+memory[out_offset:out_offset+48] = [ x + y        if x+y < mod
+                                   [ x + y - mod  otherwise
+
+Where x, y, mod, and result are integers of at-most 384-bits stored in memory as little-endian.
+
+Must also check memory length and possibly grow the memory.
+memoryLength = M( M( M( M( memoryLength, x_offset, 48 ), y_offset, 48 ), out_offset, 48 ), mod_offset, 48 )
+```
+
+#### SUBMOD384 | alpha = 1 | delta = 0 | Description:
+```
+out_offset = stack[0][16:20]
+x_offset = stack[0][20:24]
+y_offset = stack[0][24:28]
+mod_offset = stack[0][28:32]
+
+Where each offset is a big-endian unsigned 32-bit integer.
+
+x = memory[x_offset:x_offset+48]
+y = memory[y_offset:y_offset+48]
+mod = memory[mod_offset:mod_offset+48]
+
+memory[out_offset:out_offset+48] = [ x - y        if x-y >= 0
+                                   [ x - y + mod  otherwise
+
+Where x, y, mod, and result are integers of at-most 384-bits stored in memory as little-endian.
+
+Must also check memory length and possibly grow the memory.
+memoryLength = M( M( M( M( memoryLength, x_offset, 48 ), y_offset, 48 ), out_offset, 48 ), mod_offset, 48 )
+```
+
+#### MULMODMONT384 | alpha = 1 | delta = 0 | Description:
+```
+out_offset = stack[0][16:20]
+x_offset = stack[0][20:24]
+y_offset = stack[0][24:28]
+mod_and_inv_offset = stack[0][28:32]
+
+Where each offset is a big-endian unsigned 32-bit integer.
+
+x = memory[x_offset:x_offset+48]
+y = memory[y_offset:y_offset+48]
+mod = memory[mod_rinv_offset:mod_rinv_offset+48]
+r_inv = memory[mod_rinv_offset+48:mod_rinv_offset+56]
+
+memory[out_offset:out_offset+48] =  (x * y * r_inv) % mod
+Where the multiplication operation is montgomery multiplication, even if modulus is even.
+
+Where x, y, mod, and result are integers of at-most 384-bits stored in memory as little-endian. Similarly, mod_r is an integer of at-most 64-bits stored in memory as little-endian.
+
+Must also check memory length and possibly grow the memory.
+memoryLength = M( M( M( M( memoryLength, x_offset, 48 ), y_offset, 48 ), out_offset, 48 ), mod_and_inv_offset, 56 )
+```
 
 ## Rationale
 
-The rationale fleshes out the specification by describing what motivated the design and why particular design decisions were made. It should describe alternate designs that were considered and related work, e.g. how the feature is supported in other languages. The rationale may also provide evidence of consensus within the community, and should discuss important objections or concerns raised during discussion.
+### Instructions
+
+These instructions were identified as 
+
+### Packed arguments
+
+...
+
+### Endianess
+
+...
 
 ## Backwards Compatibility
 
-All EIPs that introduce backwards incompatibilities must include a section describing these incompatibilities and their severity. The EIP must explain how the author proposes to deal with these incompatibilities. EIP submissions without a sufficient backwards compatibility treatise may be rejected outright.
+This EIP introduces new opcodes which did not exists previously. Already deployed contracts using these opcodes could change their behaviour after this EIP.
 
 ## Test Cases
 
-Test cases for an implementation are mandatory for EIPs that are affecting consensus changes. Other EIPs can choose to include links to test cases if applicable.
+TBA
 
 ## Implementation
 
-The implementations must be completed before any EIP is given status "Final", but it need not be completed before the EIP is accepted. While there is merit to the approach of reaching consensus on the specification and rationale before writing code, the principle of "rough consensus and running code" is still useful when it comes to resolving many discussions of API details.
+TBA
 
 ## Security Considerations
 
-All EIPs must contain a section that discusses the security implications/considerations relevant to the proposed change. Include information that might be important for security discussions, surfaces risks and can be used throughout the life cycle of the proposal. E.g. include security-relevant design decisions, concerns, important discussions, implementation-specific guidance and pitfalls, an outline of threats and risks and how they are being addressed. EIP submissions missing the "Security Considerations" section will be rejected. An EIP cannot proceed to status "Final" without a Security Considerations discussion deemed sufficient by the reviewers.
+TBA
 
 ## Copyright
 
