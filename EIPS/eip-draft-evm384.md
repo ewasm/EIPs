@@ -26,22 +26,23 @@ and results. We suggest referring to them for historical details.
 
 ## Specification
 
-We use notation from the Yellow Paper.
+We use notation from the [Yellow Paper](https://ethereum.github.io/yellowpaper/paper.pdf).
 
-| value    | Mnemonic      | delta   | alpha   | Description|
-| -------- | --------      | ---     | ---     | ---        |
-| 0xc0     | ADDMOD384     | (below) | (below) | (below)    |
-| 0xc1     | SUBMOD384     | (below) | (below) | (below)    |
-| 0xc2     | MULMODMONT384 | (below) | (below) | (below)    |
+| Opcode   | Mnemonic      | Delta   | Alpha   | Description | Gas cost |
+| -------- | --------      | ---     | ---     | ---         | ---      |
+| 0xc0     | ADDMOD384     | 0       | 1       | (below)     | 3 gas    |
+| 0xc1     | SUBMOD384     | 0       | 1       | (below)     | 3 gas    |
+| 0xc2     | MULMODMONT384 | 0       | 1       | (below)     | 6 gas    |
 
 Recall from the Yellow Paper that delta is number of elements popped from stack and alpha is number of elements pushed to stack.
-In the descriptions below, we replace Yellow Paper symbols $𝛍_s$, $𝛍_m$, and $𝛍_i$ with `stack`, `memory`, and `memoryLength`, respectively.
+In the descriptions below, we replace Yellow Paper symbols 𝛍<sub>s</sub>, 𝛍<sub>m</sub>, and 𝛍<sub>i</sub> with `stack`, `memory`, and `memoryLength`, respectively.
 In particular, `stack[0]` refers to the first item popped from the stack, `stack[1]` is the second item popped from the stack, and so on.
 `stack'[0]` and `stack'[1]` are the top and second-to-top item pushed to the stack by the operation. `memory[i..i+48]` refers to the memory
 bytes from byte `i` to `i+48`. `memoryLength` is the current number of 32-byte chunks in memory.
 Finally, function `M(current_memoryLength, start_byte_offset, bytelength_accessed)` is the "memory expansion for range function" from the Yellow Paper H.1. 
 
-#### ADDMOD384 | alpha = 1 | delta = 0 | Description:
+#### ADDMOD384
+
 ```
 out_offset = stack[0][24:26]
 x_offset = stack[0][26:28]
@@ -63,7 +64,8 @@ Must also check memory length and possibly grow the memory.
 memoryLength = M( M( M( M( memoryLength, x_offset, 48 ), y_offset, 48 ), out_offset, 48 ), mod_offset, 48 )
 ```
 
-#### SUBMOD384 | alpha = 1 | delta = 0 | Description:
+#### SUBMOD384
+
 ```
 out_offset = stack[0][24:26]
 x_offset = stack[0][26:28]
@@ -85,7 +87,8 @@ Must also check memory length and possibly grow the memory.
 memoryLength = M( M( M( M( memoryLength, x_offset, 48 ), y_offset, 48 ), out_offset, 48 ), mod_offset, 48 )
 ```
 
-#### MULMODMONT384 | alpha = 1 | delta = 0 | Description:
+#### MULMODMONT384
+
 ```
 out_offset = stack[0][24:26]
 x_offset = stack[0][26:28]
