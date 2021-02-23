@@ -44,12 +44,12 @@ Finally, function `M(current_memoryLength, start_byte_offset, bytelength_accesse
 #### ADDMOD384
 
 ```
-out_offset = stack[0][24:26]
-x_offset = stack[0][26:28]
-y_offset = stack[0][28:30]
-mod_offset = stack[0][30:32]  i.e. least-significant bytes of the big-endian stack item.
+out_offset = stack[0][16:20]
+x_offset = stack[0][20:24]
+y_offset = stack[0][24:28]
+mod_offset = stack[0][28:32]  i.e. least-significant bytes of the big-endian stack item.
 
-Where each offset is a big-endian unsigned 16-bit integer.
+Where each offset is a big-endian unsigned 32-bit integer.
 
 x = memory[x_offset:x_offset+48]
 y = memory[y_offset:y_offset+48]
@@ -67,12 +67,12 @@ memoryLength = M( M( M( M( memoryLength, x_offset, 48 ), y_offset, 48 ), out_off
 #### SUBMOD384
 
 ```
-out_offset = stack[0][24:26]
-x_offset = stack[0][26:28]
-y_offset = stack[0][28:30]
-mod_offset = stack[0][30:32]
+out_offset = stack[0][16:20]
+x_offset = stack[0][20:24]
+y_offset = stack[0][24:28]
+mod_offset = stack[0][28:32]
 
-Where each offset is a big-endian unsigned 16-bit integer.
+Where each offset is a big-endian unsigned 32-bit integer.
 
 x = memory[x_offset:x_offset+48]
 y = memory[y_offset:y_offset+48]
@@ -90,12 +90,12 @@ memoryLength = M( M( M( M( memoryLength, x_offset, 48 ), y_offset, 48 ), out_off
 #### MULMODMONT384
 
 ```
-out_offset = stack[0][24:26]
-x_offset = stack[0][26:28]
-y_offset = stack[0][28:30]
-mod_and_inv_offset = stack[0][30:32]
+out_offset = stack[0][16:20]
+x_offset = stack[0][20:24]
+y_offset = stack[0][24:28]
+mod_and_inv_offset = stack[0][28:32]
 
-Where each offset is a big-endian unsigned 16-bit integer.
+Where each offset is a big-endian unsigned 32-bit integer.
 
 x = memory[x_offset:x_offset+48]
 y = memory[y_offset:y_offset+48]
