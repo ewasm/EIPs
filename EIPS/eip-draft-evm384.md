@@ -11,7 +11,7 @@ created: 2020-10-01
 
 ## Abstract
 
-Introducing three opcodes to speed up <=384-bit computations. They can be useful for efficiently implementing elliptic curve operations
+Introducing three opcodes to speed up 384-bit computations. They can be useful for efficiently implementing elliptic curve operations
 on up to 384-bit curves, this includes BLS12-381 and BLS12-377, among others.
 
 ## Motivation
@@ -117,16 +117,15 @@ memoryLength = M( M( M( M( memoryLength, x_offset, 48 ), y_offset, 48 ), out_off
 
 Our design was initially motivated by enabling the implementation of BLS12-381 operations, which only requires addition, subtraction, and exponentiation.
 We have [identified some candidates](https://notes.ethereum.org/@poemm/evm384-update5#INVERSEMOD384-and-SQUAREROOTMOD384) for further extension, but they
-are not a requirement for BLS12-381. The other uses cases we have looked at were implementable using these instructions too. 
+are not a requirement for BLS12-381. The other use cases we have looked at were implementable using these instructions too. 
 
-Should the need arise, it would be possible to introduce other operators using the design of this EIP.
+Should the need arise, it would be possible to introduce other operations using the design of this EIP.
 
 ### Packed arguments
 
 In [earlier designs](https://notes.ethereum.org/@poemm/evm384-interface-update) we have explored instructions taking each of the parameters as individual stack items.
-While this matches the design of other EVM opcodes, the stack manipulation overhead is not justifiable. 
-
-Packing the parameters into a single stack slot not only removes this overhead, but introduces a beneficial restriction by limiting the addressable memory.
+While this matches the design of other EVM opcodes, the stack manipulation overhead is not justifiable. Packing the parameters into a single stack slot reduces
+this overhead and has no other change requirement for the EVM.
 
 ### Endianess
 
@@ -156,7 +155,8 @@ TBA
 
 ## Security Considerations
 
-TBA
+The rationale for the gas model is explained in [the appendix](https://notes.ethereum.org/@poemm/evm384-update5#Appendix-A-Model-A-%E2%80%94-The-BaseOperation-Gas-Model)
+of EVM384 Update 5, including a [security analysis](https://notes.ethereum.org/@poemm/EVM384SecurityAnalysis).
 
 ## Copyright
 
